@@ -30,6 +30,11 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    launchOptions: {
+      // Reads the environment variable or defaults to 0
+      slowMo: process.env.SLOWMO ? parseInt(process.env.SLOWMO) : 0,
+    }
   },
 
   /* Configure projects for major browsers */

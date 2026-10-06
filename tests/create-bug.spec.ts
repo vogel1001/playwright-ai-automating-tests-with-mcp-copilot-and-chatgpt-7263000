@@ -80,3 +80,44 @@ test('searching for pickle shows no results', async ({ page }) => {
   await expect(page.getByText('No bugs matched.')).toBeVisible();
   await expect(page.getByText('pickle')).not.toBeVisible();
 });
+
+test('logs in, logs out, and returns to the login page', async ({ page }) => {
+  await page.goto('/login');
+
+  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await expect(page).toHaveURL(/\/board$/);
+  await page.getByRole('button', { name: 'Logout' }).click();
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
+});
+
+test('logs in, closes the last bug, and verifies it shows in the closed list', async ({ page }) => {
+  await page.goto('/login');
+
+  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await expect(page).toHaveURL(/\/board$/);
+
+  const lastBug = page.locator('table[aria-label="Bugs"] tbody tr[role="button"]').last();
+  await expect(lastBug).toBeVisible();
+
+  const bugTitle = (await lastBug.locator('td').nth(2).textContent())?.trim();
+  await lastBug.click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('State').selectOption('closed');
+  await dialog.getByRole('button', { name: 'Save' }).click();
+
+  await expect(dialog).toBeHidden();
+
+  await page.getByRole('button', { name: 'Closed' }).click();
+  await expect(page.getByText('No bugs matched.')).not.toBeVisible();
+  await expect(page.getByRole('table', { name: 'Bugs' })).toContainText(bugTitle ?? '');
+});
